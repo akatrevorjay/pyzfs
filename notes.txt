@@ -1,0 +1,18 @@
+On Opensolaris, one must edit /usr/site/include/python2.5/pyconfig.h:
+--- pyconfig.h.orig	Tue Jul  8 20:50:29 2008
++++ pyconfig.h	Tue Jul  8 20:48:49 2008
+@@ -938,10 +938,10 @@
+ #define _REENTRANT 1
+ 
+ /* Define to the level of X/Open that your system supports */
+-#define _XOPEN_SOURCE 600
++#define _XOPEN_SOURCE 500
+ 
+ /* Define to activate Unix95-and-earlier features */
+-#define _XOPEN_SOURCE_EXTENDED 1
++//#define _XOPEN_SOURCE_EXTENDED 1
+ 
+ /* Define on FreeBSD to activate all library features */
+ #define __BSD_VISIBLE 1
+
+
