@@ -1,22 +1,20 @@
+#! /usr/site/bin/python
 import sys
-if len(sys.argv) > 2:
-	if sys.argv[2] == "debug":
-		import pyzfs_debug
-		pyzfs=pyzfs_debug
-else:
-	import pyzfs
+import pyzfs
 fsname=str(sys.argv[1])
 a=pyzfs.z(True) # argument is "should I spew debug"
 
 def test_one(fsname):
 	print " Python starting test one: open filesystems"
-	for fs in [fsname, 'filesystemthatdoesntexist']:
+	for fs in [fsname, 'rpool', 'filesystemthatdoesntexist']:
 		print "=================================="
 		print " Python: Opening fs \"%s\"" % (fs)
 		try:
-			b=a.open_fs(fs, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-			print " Python: %s is of type %s" % (b.name(), b.type_string())
-			print " Python: Quota for %s is %s" % (b.name(), bytestonice(b.prop_get_int(pyzfs.ZFS_PROP_QUOTA)))
+			print dir(pyzfs.zfs.types)
+			b=a.open_fs(fs, pyzfs.zfs.types.filesystem | pyzfs.zfs.types.snapshot | pyzfs.zfs.types.volume)
+			print " Python: %s is of type %s" % (b.name(), b.type())
+			print " Python: Quota for %s is %s" % (b.name(), bytestonice(b.quota()))
+			print " Python: Origin for %s is %s" % (b.name(), b.origin())
 			del(b)
 		except RuntimeError, e:
 			print " Python error raised: %s" % e
@@ -42,13 +40,11 @@ def bytestonice(size):
 		nicesize = nicesize / 1024
 	return "%.3f%s" % (nicesize, units[unit])
 def fn(x, data):
-	print "%s %s" % (x.name(), bytestonice(x.prop_get_int(pyzfs.ZFS_PROP_QUOTA)))
+	print "%s %s" % (x.name(), bytestonice(x.quota()))
 
 print " Python: Starting tests on %s" % (fsname)
-print "%s" % (pyzfs.ZFS_PROP_QUOTA)
-sys.exit(0)
 test_one(fsname)
-test_two(fsname)
-fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-fs.iter_filesystems(fn, None)
+#test_two(fsname)
+#fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
+#fs.iter_filesystems(fn, None)
 print " Python: Done!"

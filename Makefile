@@ -4,7 +4,7 @@ all: pyzfs pyzfs_debug test
 INCLUDES=-I/usr/include/python2.4
 LIBS=-lpthread -lzfs -lpython2.4
 EXTRADEFS=-DSWIG
-COMPILER=gcc
+COMPILER=SunStudio
 OPENSOLARIS=yes
 MYPOOL=data
 
