@@ -15,6 +15,12 @@ def test_one(fsname):
 			print " Python: %s is of type %s" % (b.name(), b.type())
 			print " Python: Quota for %s is %s" % (b.name(), bytestonice(b.quota()))
 			print " Python: Origin for %s is %s" % (b.name(), b.origin())
+			print " Python: Mounted for %s is %s" % (b.name(), b.mounted())
+			print " Python: Compressratio for %s is %s" % (b.name(), b.compressratio())
+			print " Python: Referenced for %s is %s" % (b.name(), bytestonice(b.referenced()))
+			print " Python: Available for %s is %s" % (b.name(), bytestonice(b.available()))
+			print " Python: Used for %s is %s" % (b.name(), bytestonice(b.used()))
+			print " Python: Creation time for %s is %s" % (b.name(), b.creation())
 			del(b)
 		except RuntimeError, e:
 			print " Python error raised: %s" % e
@@ -40,11 +46,16 @@ def bytestonice(size):
 		nicesize = nicesize / 1024
 	return "%.3f%s" % (nicesize, units[unit])
 def fn(x, data):
+	print dir(x)
+	print dir(data)
+	print x.__class__
+	print data.__class__
 	print "%s %s" % (x.name(), bytestonice(x.quota()))
 
 print " Python: Starting tests on %s" % (fsname)
-test_one(fsname)
+#test_one(fsname)
 #test_two(fsname)
-#fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-#fs.iter_filesystems(fn, None)
+fs = a.open_fs(fsname, pyzfs.zfs.types.filesystem | pyzfs.zfs.types.snapshot | pyzfs.zfs.types.volume)
+a= fs.iter_children(fn)
+print repr(a)
 print " Python: Done!"
