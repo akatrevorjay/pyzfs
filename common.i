@@ -25,6 +25,7 @@ int my_eval(zfs_handle_t *child, void *data)
 	DEBUG(printf("Start function call:\n"););
 	resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(&the_child), SWIGTYPE_p_zfs, 0 );
 	PyEval_CallObject(func, Py_BuildValue("(OO)", resultobj, realdata));
+	int rval = (resultobj == Py_True);
 	Py_XDECREF(resultobj);
 	if (PyErr_Occurred() != NULL)
 	{
@@ -32,7 +33,7 @@ int my_eval(zfs_handle_t *child, void *data)
 		PyErr_Print();
 	}
 	DEBUG(printf("Done calling function\n"););
-	return 0;
+	return rval;
 }
 %}
 

@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import sys
+snapname = "rpool/tiny@now"
 if len(sys.argv) > 2:
 	if sys.argv[2] == "debug":
 		import pyzfs_debug
@@ -44,11 +46,16 @@ def bytestonice(size):
 def fn(x, data):
 	print "%s %s" % (x.name(), bytestonice(x.prop_get_int(pyzfs.ZFS_PROP_QUOTA)))
 
-print " Python: Starting tests on %s" % (fsname)
-print "%s" % (pyzfs.ZFS_PROP_QUOTA)
-sys.exit(0)
-test_one(fsname)
-test_two(fsname)
-fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-fs.iter_filesystems(fn, None)
+#print " Python: Starting tests on %s" % (fsname)
+#print "%s" % (pyzfs.ZFS_PROP_QUOTA)
+#test_one(fsname)
+#test_two(fsname)
+#fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
+#fs.iter_filesystems(fn, None)
+#fs.iter_dependents(fn, None, True)
+print " Python: Trying a zfs send from %s" % (snapname)
+fs = a.open_fs("rpool/tiny", pyzfs.ZFS_TYPE_FILESYSTEM)
+output = open("/tmp/tiny-b", "w")
+fs.send(None, "now", output, True, False, False, False, False, False, None, None)
+output.close()
 print " Python: Done!"

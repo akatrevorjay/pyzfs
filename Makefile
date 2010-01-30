@@ -4,9 +4,9 @@ all: pyzfs pyzfs_debug test
 INCLUDES=-I/usr/include/python2.4
 LIBS=-lpthread -lzfs -lpython2.4
 EXTRADEFS=-DSWIG
-COMPILER=SunStudio
+COMPILER=gcc
 OPENSOLARIS=yes
-MYPOOL=data
+MYPOOL=huge
 
 ifeq ($(COMPILER),SunStudio)
 	CFLAGS=
@@ -33,8 +33,8 @@ CFLAGS+=-g
 pyzfs: _pyzfs.so 
 pyzfs_debug: _pyzfs_debug.so
 test: test.py
-	/usr/bin/python test.py $(MYPOOL)
-#	/usr/bin/python test.py $(MYPOOL) debug
+#	/usr/bin/python test.py $(MYPOOL)
+	pfexec /usr/bin/python test.py $(MYPOOL) debug
 
 _pyzfs.so: $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(SHARED) $(LIBS) $(OBJECTS) -o $@

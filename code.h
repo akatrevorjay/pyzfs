@@ -66,6 +66,7 @@ class zfs
 		int iter_dependents(PyObject *, PyObject *, bool);
 		int iter_snapshots(PyObject *, PyObject *);
 		int iter_root(PyObject *, PyObject *);
+    int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, bool replicate, bool doall, bool fromorigin, bool dedup, bool props, PyObject *callable, PyObject *callableArg);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:
 		void init(z*, const libzfs_handle_t *, zfs_handle_t *);

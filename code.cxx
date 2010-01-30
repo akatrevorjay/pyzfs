@@ -116,7 +116,7 @@ PyObject *zfs::prop_get_int(zfs_prop_t prop)
 {
 	return PyLong_FromUnsignedLongLong((unsigned long long)zfs_prop_get_int(m_openfs, prop));
 }
-int my_eval(zfs_handle_t *child, void *data);
+extern int my_eval(zfs_handle_t *child, void *data);
 int zfs::generic_iter(PyObject *call, PyObject *data, iter_type type, bool recurse)
 // Note: recurse is only used for the "dependents" mode
 {
@@ -143,6 +143,36 @@ int zfs::iter_snapshots(PyObject *call, PyObject *data) { return generic_iter(ca
 int zfs::iter_dependents(PyObject *call, PyObject *data, bool recurse) { return generic_iter(call, data, dependents, recurse); }
 int zfs::iter_children(PyObject *call, PyObject *data) { return generic_iter(call, data, children, false); }
 int zfs::iter_root(PyObject *call, PyObject *data) { return generic_iter(call, data, root, false); }
+
+int zfs::send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, bool replicate, bool doall, bool fromorigin, bool dedup, bool props, PyObject *callable, PyObject *callableArg)
+{
+  PyObject *foo = Py_BuildValue("{sOsOsO}",
+          "function", callable,
+          "parent", PyCObject_FromVoidPtr(m_parent, NULL),
+          "zfs_handle", PyCObject_FromVoidPtr(m_handle, NULL));
+  if (callableArg!= NULL)
+    PyDict_SetItemString(foo, "data", callableArg);
+  int outfd = PyObject_AsFileDescriptor(writeTo);
+  DEBUG(printf("Got FD %d from file object %p\n", outfd, writeTo));
+  if (outfd == -1) {
+    return -1;
+  }
+  #ifdef sendflags_t
+  sendflags_t flags;
+  flags.verbose = verbose;
+  flags.replicate = replicate;
+  flags.doall = doall;
+  flags.fromorigin = fromorigin;
+  flags.dedup = dedup;
+  flags.props = props;
+  return zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, my_eval, foo);
+  #else
+  int rval = zfs_send(m_openfs, fromsnap, tosnap, (boolean_t)replicate, (boolean_t)doall, (boolean_t)fromorigin, (boolean_t)verbose, outfd);
+  #endif
+  
+  DEBUG(printf("zfs_send returned %d\n", rval));
+  return rval;
+}
 
 zfs::~zfs()
 {
