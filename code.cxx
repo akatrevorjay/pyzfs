@@ -20,7 +20,10 @@ void z::init(bool spew_error)
 }
 zfs_handle_t* z::raw_open_fs(const char *name, zfs_type_t type)
 {
-	DEBUG(printf("Opening raw fs for z instance at %p: %p, \"%s\", %d\n", this, m_handle, name, type););
+  if (name == NULL) {
+    throw Exception(PyExc_ValueError, "NULL passed as name");
+  }
+	DEBUG(printf("Opening raw fs for z instance at %p: %p, \"%p\", %d\n", this, m_handle, name, type););
 	zfs_handle_t *fs = zfs_open(m_handle, name, type);
 	if (libzfs_errno(m_handle) != 0)
 	{
@@ -30,12 +33,15 @@ zfs_handle_t* z::raw_open_fs(const char *name, zfs_type_t type)
 		std::string desc = std::string(libzfs_error_description(m_handle));
 		libzfs_fini(m_handle);
 		m_handle = libzfs_init();
-		throw Exception(action, desc);
+		throw Exception(PyExc_RuntimeError, action + ": " + desc);
 	}
 	return fs;
 }
 
-
+zfs *z::open_fs(const char *name)
+{
+  return open_fs(name, ZFS_TYPE_FILESYSTEM);
+}
 zfs *z::open_fs(const char *name, zfs_type_t type)
 {
 	DEBUG(printf("Opening cooked fs for z instance at %p: %p, \"%s\", %d\n", this, m_handle, name, type););
@@ -45,6 +51,9 @@ zfs *z::open_fs(const char *name, zfs_type_t type)
 }
 zpool *z::open_pool(const char *name)
 {
+  if (name == NULL) {
+    throw Exception(PyExc_ValueError, "NULL passed as name");
+  }
 	zpool_handle_t *openpool = zpool_open(m_handle, name);
 	if (libzfs_errno(m_handle) != 0)
 	{
@@ -53,7 +62,7 @@ zpool *z::open_pool(const char *name)
 		std::string desc = std::string(libzfs_error_description(m_handle));
 		libzfs_fini(m_handle);
 		m_handle = libzfs_init();
-		throw Exception(action, desc);
+		throw Exception(PyExc_RuntimeError, action + ": " + desc);
 	}
 	return new zpool(m_handle, openpool);
 }
@@ -144,18 +153,67 @@ int zfs::iter_dependents(PyObject *call, PyObject *data, bool recurse) { return 
 int zfs::iter_children(PyObject *call, PyObject *data) { return generic_iter(call, data, children, false); }
 int zfs::iter_root(PyObject *call, PyObject *data) { return generic_iter(call, data, root, false); }
 
+#define SEND_BOOL_PROP_NAMES verbose, replicate, doall, fromorigin, dedup, props
+#define PROP_PAIR(x) {#x, &x}
+
+int zfs::send(char *snap, PyObject *writeTo, PyObject *kwargs)
+{
+  DEBUG(printf("Entering short zfs::send\n"));
+  typedef struct {
+    char *name;
+    bool *loc;
+    bool seen;
+  } boolPropEntry;
+  bool verbose = false, replicate = false, doall = false, fromorigin = false, dedup = false, props = false;
+  boolPropEntry properties[] = {
+    PROP_PAIR(verbose),
+    PROP_PAIR(replicate),
+    PROP_PAIR(doall),
+    PROP_PAIR(fromorigin),
+    PROP_PAIR(dedup),
+    PROP_PAIR(props),
+  };
+  PyObject *callable = NULL, *callableArg = NULL;
+  char *fromsnap = NULL;
+  for (unsigned int i = 0; i < sizeof(properties) / sizeof(boolPropEntry); ++i)
+  {
+    if (PyMapping_HasKeyString(kwargs, properties[i].name))
+    {
+      PyObject *value = PyMapping_GetItemString(kwargs, properties[i].name);
+      if (!PyBool_Check(value)) {
+        throw Exception(PyExc_ValueError, std::string("Value for ") + properties[i].name + " must be boolean");
+      }
+      *(properties[i].loc) = (value == Py_True);
+      if (*properties[i].loc)
+        DEBUG(printf("Setting %s to True\n", properties[i].name));
+      else
+        DEBUG(printf("Setting %s to False\n", properties[i].name));
+    }
+  }
+  DEBUG(printf("calling real send()\n"));
+  return send(fromsnap, snap, writeTo, verbose, replicate, doall, fromorigin, dedup, props, callable, callableArg);
+}
+
 int zfs::send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, bool replicate, bool doall, bool fromorigin, bool dedup, bool props, PyObject *callable, PyObject *callableArg)
 {
-  PyObject *foo = Py_BuildValue("{sOsOsO}",
-          "function", callable,
+  if (tosnap == NULL)
+    throw Exception(PyExc_ValueError, "tosnap may not be NULL");
+  int rval = -1;
+  PyObject *foo = Py_BuildValue("{sOsO}",
           "parent", PyCObject_FromVoidPtr(m_parent, NULL),
           "zfs_handle", PyCObject_FromVoidPtr(m_handle, NULL));
-  if (callableArg!= NULL)
+  if (PyErr_Occurred()) {
+    DEBUG(printf("Couldn't build dictionary object\n"));
+    return -1;
+  }
+  if (callable != NULL) 
+    PyDict_SetItemString(foo, "function", callable);
+  if (callableArg != NULL)
     PyDict_SetItemString(foo, "data", callableArg);
   int outfd = PyObject_AsFileDescriptor(writeTo);
   DEBUG(printf("Got FD %d from file object %p\n", outfd, writeTo));
   if (outfd == -1) {
-    return -1;
+    throw Exception(PyExc_TypeError, "Couldn't get file descriptor from writeTo");
   }
   #ifdef sendflags_t
   sendflags_t flags;
@@ -167,7 +225,7 @@ int zfs::send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, boo
   flags.props = props;
   return zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, my_eval, foo);
   #else
-  int rval = zfs_send(m_openfs, fromsnap, tosnap, (boolean_t)replicate, (boolean_t)doall, (boolean_t)fromorigin, (boolean_t)verbose, outfd);
+  rval = zfs_send(m_openfs, fromsnap, tosnap, (boolean_t)replicate, (boolean_t)doall, (boolean_t)fromorigin, (boolean_t)verbose, outfd);
   #endif
   
   DEBUG(printf("zfs_send returned %d\n", rval));

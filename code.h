@@ -25,13 +25,12 @@ class zpool;
 class Exception 
 {
 	public:
-		Exception(std::string s, std::string text) 
-			{ source = s; description = text; }
-		std::string description, source;
-		const char *error()
-		{
-			return (source + ": " + description).c_str();
-		}
+		Exception(PyObject *type, std::string text) 
+			{ m_type = type; m_text = (char *)text.c_str(); }
+    Exception(PyObject *type, const char *text) 
+      { m_type = type; m_text = (char *)text; }
+		char *m_text;
+    PyObject *m_type;
 };
 
 class z
@@ -39,6 +38,7 @@ class z
 	public:
 		z();
 		z(bool);
+    zfs *open_fs(const char *name);
 		zfs *open_fs(const char *name, zfs_type_t);
 		zpool *open_pool(const char *name);
 		~z();
@@ -66,7 +66,8 @@ class zfs
 		int iter_dependents(PyObject *, PyObject *, bool);
 		int iter_snapshots(PyObject *, PyObject *);
 		int iter_root(PyObject *, PyObject *);
-    int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, bool replicate, bool doall, bool fromorigin, bool dedup, bool props, PyObject *callable, PyObject *callableArg);
+    int send(char *snap, PyObject *writeTo, PyObject *kwargs);
+    int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose = false, bool replicate = false, bool doall = false, bool fromorigin = false, bool dedup = false, bool props = false, PyObject *callable = NULL, PyObject *callableArg = NULL);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:
 		void init(z*, const libzfs_handle_t *, zfs_handle_t *);

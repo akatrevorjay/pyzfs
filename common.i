@@ -14,6 +14,9 @@ int my_eval(zfs_handle_t *child, void *data)
 	DEBUG(printf("%s\n", zfs_get_name(child)););
 	PyObject *dict = (PyObject*)data;
 	PyObject *func = PyDict_GetItemString(dict, "function");
+	if (func == NULL) {
+    return 0;
+  }
 	PyObject *parent = PyDict_GetItemString(dict, "parent");
 	z* m_parent = (z*)PyCObject_AsVoidPtr(parent);
 	PyObject *handle = PyDict_GetItemString(dict, "zfs_handle");
@@ -43,7 +46,7 @@ int my_eval(zfs_handle_t *child, void *data)
 		$function
 	}
 	catch (Exception e) {
-		PyErr_SetString(PyExc_RuntimeError,e.error());
+		PyErr_SetString(e.m_type, e.m_text);
 		return NULL;
 	}
 }

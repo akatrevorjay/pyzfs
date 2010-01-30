@@ -18,7 +18,7 @@ ifeq ($(COMPILER),SunStudio)
 	CFILT=/opt/SunStudioExpress/bin/c++filt
 else
 ifeq ($(COMPILER),gcc)
-	CFLAGS=-Wall
+	CFLAGS=-Wall -g
 	CC=gcc
 	CXX=g++
 	SHARED=-shared
@@ -34,7 +34,7 @@ pyzfs: _pyzfs.so
 pyzfs_debug: _pyzfs_debug.so
 test: test.py
 #	/usr/bin/python test.py $(MYPOOL)
-	pfexec /usr/bin/python test.py $(MYPOOL) debug
+	pfexec /usr/bin/python test.py
 
 _pyzfs.so: $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(SHARED) $(LIBS) $(OBJECTS) -o $@
@@ -44,6 +44,8 @@ _pyzfs_debug.so: $(DEBUG_OBJECTS)
 	$(CC) -c -fPIC $(INCLUDES) -DSWIG $<
 %.o: %.cxx
 	$(CXX) $(CFLAGS) -c -fPIC $(INCLUDES) $(EXTRADEFS) $<
+%.expand: %.cxx
+	$(CXX) $(CFLAGS) -E $(INCLUDES) $(EXTRADEFS) $< > $@
 %.do: %.c
 	$(CC) -c -fPIC $(INCLUDES) -DSWIG $< -o $@
 %.do: %.cxx

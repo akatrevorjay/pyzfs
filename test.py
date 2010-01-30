@@ -1,61 +1,82 @@
 # -*- coding: utf-8 -*-
 import sys
-snapname = "rpool/tiny@now"
-if len(sys.argv) > 2:
-	if sys.argv[2] == "debug":
-		import pyzfs_debug
-		pyzfs=pyzfs_debug
+import time
+import unittest
+import tempfile
+
+Debug = False
+if Debug:
+  import pyzfs_debug
+  pyzfs=pyzfs_debug
 else:
-	import pyzfs
-fsname=str(sys.argv[1])
-a=pyzfs.z(True) # argument is "should I spew debug"
+  import pyzfs
 
-def test_one(fsname):
-	print " Python starting test one: open filesystems"
-	for fs in [fsname, 'filesystemthatdoesntexist']:
-		print "=================================="
-		print " Python: Opening fs \"%s\"" % (fs)
-		try:
-			b=a.open_fs(fs, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-			print " Python: %s is of type %s" % (b.name(), b.type_string())
-			print " Python: Quota for %s is %s" % (b.name(), bytestonice(b.prop_get_int(pyzfs.ZFS_PROP_QUOTA)))
-			del(b)
-		except RuntimeError, e:
-			print " Python error raised: %s" % e
-def test_two(poolname):
-	print " Python starting test two: open pools"
-	for pool in [poolname, 'poolthatdoesntexist']:
-		print "=================================="
-		print " Python: Opening pool \"%s\"" % (pool)
-		try:
-			b=a.open_pool(pool)
-			print " Python: opened pool \"%s\"" % (b.name())
-			del(b)
-		except RuntimeError, e:
-			print " Python error raised: %s" % e
-def bytestonice(size):
-	units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-	unit = 0
-	nicesize = float(size)
-	if nicesize == -1.0:
-		return "none"
-	while (nicesize > 1024):
-		unit = unit + 1
-		nicesize = nicesize / 1024
-	return "%.3f%s" % (nicesize, units[unit])
-def fn(x, data):
-	print "%s %s" % (x.name(), bytestonice(x.prop_get_int(pyzfs.ZFS_PROP_QUOTA)))
+class FsTest(unittest.TestCase):
+  existing_fs = None
+  existing_snap = None
+  def setUp(self):
+    self.z = pyzfs.z(False) # argument is "should I spew debug"
+    self.outfile = tempfile.NamedTemporaryFile()
+  def testOpenNull(self):
+    self.assertRaises(ValueError, self.z.open_fs, None)
+  def testOpenExisting(self):
+    self.z.open_fs(self.existing_fs)
+  def testOpenNonExisting(self):
+    self.assertRaises(RuntimeError, self.z.open_fs, "filesystemthatdoesntexist")
+  def testGetType(self):
+    fs = self.z.open_fs(self.existing_fs)
+    self.assert_(fs.type_string() in ["filesystem", "snapshot", "volume"])
+  def testGetQuota(self):
+    fs = self.z.open_fs(self.existing_fs)
+    fs.prop_get_int(pyzfs.ZFS_PROP_QUOTA)
+  def testIter(self):
+    # Something that we'll pass back and forth to C; does it make the trip?
+    magic = 'magic'
+    def fn(x, data):
+      s = data[0]
+      s.assert_(data[1] == magic)
+    fs = self.z.open_fs(self.existing_fs)
+    fs.iter_filesystems(fn, [self, magic])
+  def testSendNull(self):
+    fs = self.z.open_fs(self.existing_fs)
+    self.assertRaises(ValueError, fs.send, None, 0, {})
+  def testSendBadArg(self):
+    fs = self.z.open_fs(self.existing_fs)
+    self.assertRaises(ValueError, fs.send, None, 0, {"verbose": "foo"})
+  def testSendGoodArg(self):
+    fs = self.z.open_fs(self.existing_fs)
+    fs.send(self.existing_snap, self.outfile, {})
+    self.assert_(self.outfile.tell() != 0)
+    self.outfile.seek(0)
 
-#print " Python: Starting tests on %s" % (fsname)
-#print "%s" % (pyzfs.ZFS_PROP_QUOTA)
-#test_one(fsname)
-#test_two(fsname)
-#fs = a.open_fs(fsname, pyzfs.ZFS_TYPE_FILESYSTEM | pyzfs.ZFS_TYPE_SNAPSHOT | pyzfs.ZFS_TYPE_VOLUME)
-#fs.iter_filesystems(fn, None)
-#fs.iter_dependents(fn, None, True)
-print " Python: Trying a zfs send from %s" % (snapname)
-fs = a.open_fs("rpool/tiny", pyzfs.ZFS_TYPE_FILESYSTEM)
-output = open("/tmp/tiny-b", "w")
-fs.send(None, "now", output, True, False, False, False, False, False, None, None)
-output.close()
-print " Python: Done!"
+class PoolTest(unittest.TestCase):
+  existing_pool = None
+  def setUp(self):
+    self.z = pyzfs.z(False)
+  def testOpenNull(self):
+    self.assertRaises(ValueError, self.z.open_pool, None)
+  def testOpenExisting(self):
+    pool = self.z.open_pool(self.existing_pool)
+  def testOpenNonExisting(self):
+    self.assertRaises(RuntimeError, self.z.open_pool, 'poolthatdoesntexist')
+
+
+
+#print " Python: Trying a zfs send from %s" % (snapname)
+#fs = a.open_fs("rpool/tiny", pyzfs.ZFS_TYPE_FILESYSTEM)
+#output = open("/tmp/tiny-b", "w")
+#try:
+#  fs.send(None, "now", [], True, False, False, False, False, False, None, None)
+#except:
+#  print " Python: Got an exception!"
+#output.close()
+
+
+
+if __name__ == "__main__":
+  FsTest.existing_fs = "rpool/tiny"
+  FsTest.existing_snap = "now"
+  PoolTest.existing_pool = "huge"
+  for testCase in [FsTest]: #, PoolTest]:
+    suite = unittest.TestLoader().loadTestsFromTestCase(testCase)
+    unittest.TextTestRunner(verbosity=2).run(suite)
