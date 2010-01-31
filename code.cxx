@@ -19,7 +19,7 @@ void z::init(bool spew_error)
 	m_handle = libzfs_init();
 	libzfs_print_on_error(m_handle, (boolean_t)spew_error);
 }
-zfs_handle_t* z::raw_open_fs(const char *name, zfs_type_t type)
+zfs_handle_t* z::raw_open_fs(const char *name, int type)
 {
 	if (name == NULL) {
 		throw Exception(PyExc_ValueError, "NULL passed as name");
@@ -41,9 +41,9 @@ zfs_handle_t* z::raw_open_fs(const char *name, zfs_type_t type)
 
 zfs *z::open_fs(const char *name)
 {
-	return open_fs(name, ZFS_TYPE_FILESYSTEM);
+	return open_fs(name, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_SNAPSHOT | ZFS_TYPE_VOLUME);
 }
-zfs *z::open_fs(const char *name, zfs_type_t type)
+zfs *z::open_fs(const char *name, int type)
 {
 	DEBUG(printf("Opening cooked fs for z instance at %p: %p, \"%s\", %d\n", this, m_handle, name, type););
 	zfs_handle_t *openfs = raw_open_fs(name, type);
@@ -238,7 +238,7 @@ int zfs::send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose, boo
 	return rval;
 }
 
-int zfs::receive(const char *tosnap, int fromFD, PyObject *kwargs)
+int zfs::receive(const char *tosnap, PyObject *readFrom, PyObject *kwargs)
 {
 	DEBUG(printf("Entering short zfs::receive\n"));
 	typedef struct {
@@ -270,10 +270,10 @@ int zfs::receive(const char *tosnap, int fromFD, PyObject *kwargs)
 		}
 	}
 	DEBUG(printf("calling real receive()\n"));
-	return receive(tosnap, fromFD, verbose, isprefix, istail, dryrun, force, canmountoff);
+	return receive(tosnap, readFrom, verbose, isprefix, istail, dryrun, force, canmountoff);
 }
 
-int zfs::receive(const char *tosnap, int fromFD, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff)
+int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff)
 {
 	int rval = -1;
 	recvflags_t flags;
@@ -285,7 +285,16 @@ int zfs::receive(const char *tosnap, int fromFD, bool verbose, bool isprefix, bo
 	flags.dryrun = dryrun;
 	flags.force = force;
 	flags.canmountoff = canmountoff;
+	
+	int fromFD = PyObject_AsFileDescriptor(readFrom);
+	DEBUG(printf("Got FD %d from file object %p\n", fromFD, readFrom));
+	if (fromFD == -1) {
+		throw Exception(PyExc_TypeError, "Couldn't get file descriptor from readFrom");
+	}
 	rval = zfs_receive(m_handle, tosnap, flags, fromFD, NULL);
+	if (rval != 0) {
+		throw Exception(PyExc_RuntimeError, std::string(libzfs_error_action(m_handle)) + ": " + libzfs_error_description(m_handle));
+	}
 	return rval;
 }
 

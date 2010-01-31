@@ -56,6 +56,16 @@ class FsTest(unittest.TestCase):
 		else:
 			warnings.warn("Not running as root, this is expected to raise an exception!")
 			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile, {})
+	def testRecv(self):
+		if not RunningAsRoot:
+			warnings.warn("Not running as root, can't test recv")
+		else:
+			fs = self.z.open_fs(self.existing_fs)
+			fs.send(self.existing_snap, self.outfile, {})
+			self.assert_(self.outfile.tell() != 0)
+			self.outfile.seek(0)
+			fs.receive(self.existing_fs + "_clone@new", self.outfile, {})
+			self.assert_(self.z.open_fs(self.existing_fs + "_clone@new"))
 
 class PoolTest(unittest.TestCase):
 	existing_pool = None
@@ -78,15 +88,6 @@ class PoolTest(unittest.TestCase):
 #except:
 #  print " Python: Got an exception!"
 #output.close()
-
-a=pyzfs.z()
-fs=a.open_fs("huge")
-print fs
-print dir(fs)
-print fs.readonly
-print fs.used
-print fs.usedsnap
-sys.exit(0)
 
 if __name__ == "__main__":
 	FsTest.existing_fs = "rpool/tiny"

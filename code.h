@@ -51,13 +51,13 @@ class z
 		z();
 		z(bool);
 		zfs *open_fs(const char *name);
-		zfs *open_fs(const char *name, zfs_type_t);
+		zfs *open_fs(const char *name, int);
 		zpool *open_pool(const char *name);
 		~z();
 	private:
 		void init(bool);
 		libzfs_handle_t *m_handle;
-		zfs_handle_t* raw_open_fs(const char *name, zfs_type_t);
+		zfs_handle_t* raw_open_fs(const char *name, int);
 		friend class zfs;
 };
 class zfs
@@ -81,8 +81,8 @@ class zfs
 		int iter_root(PyObject *, PyObject *);
 		int send(char *snap, PyObject *writeTo, PyObject *kwargs);
 		int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose = false, bool replicate = false, bool doall = false, bool fromorigin = false, bool dedup = false, bool props = false, PyObject *callable = NULL, PyObject *callableArg = NULL);
-		int receive(const char *tosnap, int fromFD, PyObject *kwargs);
-		int receive(const char *tosnap, int fromFD, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff);
+		int receive(const char *tosnap, PyObject *readFrom, PyObject *kwargs);
+		int receive(const char *tosnap, PyObject *readFrom, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:
 		void init(z*, const libzfs_handle_t *, zfs_handle_t *);
