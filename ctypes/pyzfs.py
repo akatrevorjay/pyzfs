@@ -11,6 +11,8 @@ class z:
 			lib.libzfs_print_on_error(handle, spew_error)
 	def open_fs(self, name, type):
 		return zfs(name, type)
+	def open_pool(self, name):
+		return zpool(name)
 
 class zfs:
 	_callback = None
@@ -65,4 +67,33 @@ class zfs:
 		zfs_iter_type = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p)
 		c_callfunc = zfs_iter_type(self._callback)
 		lib.zfs_iter_children(self.fs, c_callfunc, None)
+
+class zpool:
+	class status:
+		corrupt_cache = 0
+		missing_dev_r = 1
+		missing_dev_nr = 2
+		corrupt_label_r = 3
+		corrupt_label_nr = 4
+		bad_guid_sum = 5
+		corrupt_pool = 6
+		corrupt_data = 7
+		failing_dev = 8
+		version_newer = 9
+		hostid_mismatch = 10
+		io_failure_wait = 11
+		io_failure_continue = 12
+		faulted_dev_r = 13
+		faulted_dev_nr = 14
+		version_older = 15
+		resilvering = 16
+		offline_dev = 17
+		ok = 18
+
+	def __init__(self, name):
+		global handle
+		self.pool = lib.zpool_open(handle, name)
+
+	def getstatus(self):
+		return lib.zpool_get_status(self.pool, None)
 
