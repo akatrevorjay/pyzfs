@@ -51,4 +51,16 @@ int my_eval(zfs_handle_t *child, void *data)
 	}
 }
 
+%pythonappend zfs::zfs %{
+    for prop in dir(_pyzfs):
+    	if prop.startswith("ZFS_PROP_"):
+    		propname = prop[9:].lower()
+    		if propname == "exec":
+    			propname = "execute"
+    		if _prop_readonly(getattr(_pyzfs, prop)):
+    			exec("%s = property(lambda self: self.prop_get_int(%s))" % (propname, prop))
+    		else:
+    			exec("%s = property(lambda self: self.prop_get_int(%s), lambda self, val: self.prop_set(%s, val))" % (propname, prop, propname))
+%}
+
 %include "code.h"

@@ -28,6 +28,8 @@ typedef zprop_source_t my_zprop_t ;
 #endif
 
 #define PROP_PAIR(x) {#x, &x}
+extern "C" boolean_t zfs_prop_readonly(zfs_prop_t prop);
+bool _prop_readonly(zfs_prop_t prop);
 
 class zfs;
 class zpool;
@@ -69,6 +71,7 @@ class zfs
 		const char *type_string(void) const;
 		int raw_prop_get(zfs_prop_t, char *, size_t, my_zprop_t *, char *, size_t, boolean_t);
 		PyObject *prop_get_int(zfs_prop_t);
+		void prop_set(char *prop, char *val);
 		zfs& zfs::operator=(const zfs &);
 		enum iter_type { filesystems, children, dependents, snapshots, root };
 		int iter_filesystems(PyObject *, PyObject *);

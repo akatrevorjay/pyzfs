@@ -29,3 +29,6 @@ CHECK_SYMBOL_EXISTS(sendflags_t libzfs.h HAVE_SENDFLAGS_T)
 CHECK_STRUCT_HAS_MEMBER ("struct recvflags_t" istail libzfs.h HAVE_RECVFLAGS_T_ISTAIL)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+
+ENABLE_TESTING()
+ADD_TEST(main python2.6 test.py)

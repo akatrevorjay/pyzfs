@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import os
 import sys
 import time
 import unittest
 import tempfile
+import warnings
+
+RunningAsRoot = (os.geteuid() == 0)
 
 Debug = False
 if Debug:
@@ -45,9 +49,13 @@ class FsTest(unittest.TestCase):
 		self.assertRaises(ValueError, fs.send, None, 0, {"verbose": "foo"})
 	def testSendGoodArg(self):
 		fs = self.z.open_fs(self.existing_fs)
-		fs.send(self.existing_snap, self.outfile, {})
-		self.assert_(self.outfile.tell() != 0)
-		self.outfile.seek(0)
+		if RunningAsRoot:
+			fs.send(self.existing_snap, self.outfile, {})
+			self.assert_(self.outfile.tell() != 0)
+			self.outfile.seek(0)
+		else:
+			warnings.warn("Not running as root, this is expected to raise an exception!")
+			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile, {})
 
 class PoolTest(unittest.TestCase):
 	existing_pool = None
@@ -71,7 +79,14 @@ class PoolTest(unittest.TestCase):
 #  print " Python: Got an exception!"
 #output.close()
 
-
+a=pyzfs.z()
+fs=a.open_fs("huge")
+print fs
+print dir(fs)
+print fs.readonly
+print fs.used
+print fs.usedsnap
+sys.exit(0)
 
 if __name__ == "__main__":
 	FsTest.existing_fs = "rpool/tiny"

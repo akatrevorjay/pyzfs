@@ -1,4 +1,5 @@
 #include "code.h"
+bool _prop_readonly(zfs_prop_t prop) { return zfs_prop_readonly(prop); }
 
 z::z()
 {
@@ -124,6 +125,9 @@ int zfs::raw_prop_get(zfs_prop_t whatprop, char *output, size_t outlen, my_zprop
 PyObject *zfs::prop_get_int(zfs_prop_t prop)
 {
 	return PyLong_FromUnsignedLongLong((unsigned long long)zfs_prop_get_int(m_openfs, prop));
+}
+void zfs::prop_set(char *prop, char *val) {
+	zfs_prop_set(m_openfs, prop, val);
 }
 
 EXTERN int my_eval(zfs_handle_t *child, void *data);
