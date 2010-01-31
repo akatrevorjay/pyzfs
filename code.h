@@ -1,6 +1,8 @@
 #ifndef _CODE_H
 #define _CODE_H
 
+#include "config.h"
+
 #include <Python.h>
 #include <libzfs.h>
 #include <sys/fs/zfs.h>
@@ -8,16 +10,24 @@
 #include <ucontext.h>
 #include <string>
 
-#ifdef OPENSOLARIS
-typedef zprop_source_t my_zprop_t ;
+#ifdef NEED_EXTERN_C
+#define EXTERN extern "C++"
 #else
+#define EXTERN extern
+#endif
+
+#ifdef HAVE_ZFS_SOURCE_T
 typedef zfs_source_t my_zprop_t ;
+#else
+typedef zprop_source_t my_zprop_t ;
 #endif
 #ifdef DO_DEBUG
 #define DEBUG(x) x
 #else
 #define DEBUG(x) /* x */
 #endif
+
+#define PROP_PAIR(x) {#x, &x}
 
 class zfs;
 class zpool;
@@ -27,10 +37,10 @@ class Exception
 	public:
 		Exception(PyObject *type, std::string text) 
 			{ m_type = type; m_text = (char *)text.c_str(); }
-    Exception(PyObject *type, const char *text) 
-      { m_type = type; m_text = (char *)text; }
+		Exception(PyObject *type, const char *text) 
+			{ m_type = type; m_text = (char *)text; }
 		char *m_text;
-    PyObject *m_type;
+		PyObject *m_type;
 };
 
 class z
@@ -38,7 +48,7 @@ class z
 	public:
 		z();
 		z(bool);
-    zfs *open_fs(const char *name);
+		zfs *open_fs(const char *name);
 		zfs *open_fs(const char *name, zfs_type_t);
 		zpool *open_pool(const char *name);
 		~z();
@@ -66,8 +76,10 @@ class zfs
 		int iter_dependents(PyObject *, PyObject *, bool);
 		int iter_snapshots(PyObject *, PyObject *);
 		int iter_root(PyObject *, PyObject *);
-    int send(char *snap, PyObject *writeTo, PyObject *kwargs);
-    int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose = false, bool replicate = false, bool doall = false, bool fromorigin = false, bool dedup = false, bool props = false, PyObject *callable = NULL, PyObject *callableArg = NULL);
+		int send(char *snap, PyObject *writeTo, PyObject *kwargs);
+		int send(char *fromsnap, char *tosnap, PyObject *writeTo, bool verbose = false, bool replicate = false, bool doall = false, bool fromorigin = false, bool dedup = false, bool props = false, PyObject *callable = NULL, PyObject *callableArg = NULL);
+		int receive(const char *tosnap, int fromFD, PyObject *kwargs);
+		int receive(const char *tosnap, int fromFD, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:
 		void init(z*, const libzfs_handle_t *, zfs_handle_t *);

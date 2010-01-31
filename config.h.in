@@ -1,0 +1,6 @@
+#cmakedefine HAVE_ZFS_SOURCE_T
+#cmakedefine HAVE_RECVFLAGS_T_ISTAIL
+#cmakedefine HAVE_SENDFLAGS_T
+
+#define NEED_EXTERN_C
+// #define DO_DEBUG
