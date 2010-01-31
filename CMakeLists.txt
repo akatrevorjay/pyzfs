@@ -1,7 +1,7 @@
 # This is a CMake example for Python
 cmake_minimum_required(VERSION 2.6)
-SET(CMAKE_CXX_COMPILER "/opt/SunStudioExpress/bin/CC")
-# SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
+# SET(CMAKE_CXX_COMPILER "/opt/SunStudioExpress/bin/CC")
+SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 project(pyzfs)
 FIND_PACKAGE(SWIG REQUIRED)
