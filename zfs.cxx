@@ -149,6 +149,10 @@ int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool ispr
 	return rval;
 }
 
+int zfs::destroy(bool defer)
+{
+	return zfs_destroy(m_openfs, (boolean_t)defer);
+}
 zfs::~zfs()
 {
 	DEBUG(printf("Destroying zfs instance at %p\n", this););

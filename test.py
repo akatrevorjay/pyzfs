@@ -65,6 +65,7 @@ class FsTest(unittest.TestCase):
 		else:
 			warnings.warn("Not running as root, this is expected to raise an exception!")
 			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile)
+	# Also tests destroying, kinda
 	def testRecv(self):
 		if not RunningAsRoot:
 			warnings.warn("Not running as root, can't test recv")
@@ -74,7 +75,10 @@ class FsTest(unittest.TestCase):
 			self.assert_(self.outfile.tell() != 0)
 			self.outfile.seek(0)
 			fs.receive(self.existing_fs + "_clone@new", self.outfile)
-			self.assert_(self.z.open_fs(self.existing_fs + "_clone@new"))
+			newsnap = self.z.open_fs(self.existing_fs + "_clone@new")
+			newsnap.destroy()
+			newfs = self.z.open_fs(self.existing_fs + "_clone")
+			newfs.destroy()
 
 class PoolTest(unittest.TestCase):
 	existing_pool = None
@@ -86,15 +90,6 @@ class PoolTest(unittest.TestCase):
 		pool = self.z.open_pool(self.existing_pool)
 	def testOpenNonExisting(self):
 		self.assertRaises(RuntimeError, self.z.open_pool, 'poolthatdoesntexist')
-
-#print " Python: Trying a zfs send from %s" % (snapname)
-#fs = a.open_fs("rpool/tiny", pyzfs.ZFS_TYPE_FILESYSTEM)
-#output = open("/tmp/tiny-b", "w")
-#try:
-#  fs.send(None, "now", [], True, False, False, False, False, False, None, None)
-#except:
-#  print " Python: Got an exception!"
-#output.close()
 
 if __name__ == "__main__":
 	FsTest.existing_fs = "rpool/tiny"
