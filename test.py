@@ -8,6 +8,9 @@ import warnings
 
 RunningAsRoot = (os.geteuid() == 0)
 
+if not RunningAsRoot:
+	warnings.warn("Not running as root, can't test destroy/receive/snapshot")
+
 Debug = False
 if Debug:
 	import pyzfs_debug
@@ -25,6 +28,7 @@ class FsTest(unittest.TestCase):
 		self.assertRaises(ValueError, self.z.open_fs, None)
 	def testOpenExisting(self):
 		a = self.z.open_fs(self.existing_fs)
+		print a.name()
 	def testOpenNonExisting(self):
 		self.assertRaises(RuntimeError, self.z.open_fs, "filesystemthatdoesntexist")
 	def testGetType(self):
@@ -56,29 +60,33 @@ class FsTest(unittest.TestCase):
 		else:
 			warnings.warn("Not running as root, this is expected to raise an exception!")
 			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile)
-	def testSendKwArg(self):
+
+	def testRecvExisting(self):
 		fs = self.z.open_fs(self.existing_fs)
-		if RunningAsRoot:
-			fs.send(self.existing_snap, self.outfile)
-			self.assert_(self.outfile.tell() != 0)
-			self.outfile.seek(0)
-		else:
-			warnings.warn("Not running as root, this is expected to raise an exception!")
-			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile)
+		fs.send(self.existing_snap, self.outfile)
+		self.assert_(self.outfile.tell() != 0)
+		self.outfile.seek(0)
+		fs = self.z.open_fs(self.existing_fs)
+		self.assertRaises(RuntimeError, fs.receive, self.existing_fs, self.outfile)
+	def testRecvNullFile(self):
+		fs = self.z.open_fs(self.existing_fs)
+		self.assertRaises(TypeError, fs.receive, self.existing_fs, None)
 	# Also tests destroying, kinda
 	def testRecv(self):
-		if not RunningAsRoot:
-			warnings.warn("Not running as root, can't test recv")
-		else:
-			fs = self.z.open_fs(self.existing_fs)
-			fs.send(self.existing_snap, self.outfile)
-			self.assert_(self.outfile.tell() != 0)
-			self.outfile.seek(0)
-			fs.receive(self.existing_fs + "_clone@new", self.outfile)
-			newsnap = self.z.open_fs(self.existing_fs + "_clone@new")
-			newsnap.destroy()
-			newfs = self.z.open_fs(self.existing_fs + "_clone")
-			newfs.destroy()
+		fs = self.z.open_fs(self.existing_fs)
+		fs.send(self.existing_snap, self.outfile)
+		self.assert_(self.outfile.tell() != 0)
+		self.outfile.seek(0)
+		fs.receive(self.existing_fs + "_clone@new", self.outfile)
+		newsnap = self.z.open_fs(self.existing_fs + "_clone@new")
+		newsnap.destroy()
+		newfs = self.z.open_fs(self.existing_fs + "_clone")
+		newfs.destroy()
+	def testSnap(self):
+		fs = self.z.open_fs(self.existing_fs)
+		fs.snapshot("testingsnap")
+		newsnap = self.z.open_fs(self.existing_fs + "@testingsnap")
+		newsnap.destroy()
 
 class PoolTest(unittest.TestCase):
 	existing_pool = None

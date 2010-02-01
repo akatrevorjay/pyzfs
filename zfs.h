@@ -80,6 +80,10 @@ class zfs
 		%feature("docstring") "Destroy this filesystem.  Set defer if it's not required that it go away right now."
 		#endif
 		int destroy(bool defer = false);
+		#ifdef SWIG
+		%feature("docstring") "Take a snapshot of this dataset; call it \"snapname\" and set properties as specified in \"props\".  If recursive is set, make a snapshot of all descendents as well."
+		#endif
+		int snapshot(const char *snapname, bool recursive = false, PyObject *props = NULL);
 		zfs& zfs::operator=(const zfs &);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:

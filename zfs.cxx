@@ -126,6 +126,8 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 
 int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff)
 {
+	if (tosnap == NULL)
+		throw Exception(PyExc_ValueError, "tosnap may not be NULL");
 	int rval = -1;
 	recvflags_t flags;
 	flags.verbose = verbose;
@@ -151,8 +153,29 @@ int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool ispr
 
 int zfs::destroy(bool defer)
 {
-	return zfs_destroy(m_openfs, (boolean_t)defer);
+	int rval = zfs_destroy(m_openfs, (boolean_t)defer);
+	if (rval != 0) {
+		throw Exception(PyExc_RuntimeError, std::string(libzfs_error_action(m_handle)) + ": " + libzfs_error_description(m_handle));
+	}
+	return rval;
 }
+
+int zfs::snapshot(const char *snapname, bool recursive, PyObject *props)
+{
+	if (snapname == NULL)
+		throw Exception(PyExc_ValueError, "snapname may not be NULL");
+	int rval = -1;
+	nvlist_t *nv_props = NULL;
+	if (props != NULL) {
+		// FIXME
+	}
+	rval = zfs_snapshot(m_handle, (std::string(name()) + "@" + snapname).c_str(), (boolean_t)recursive, nv_props);
+	if (rval != 0) {
+		throw Exception(PyExc_RuntimeError, std::string(libzfs_error_action(m_handle)) + ": " + libzfs_error_description(m_handle));
+	}
+	return rval;
+}
+
 zfs::~zfs()
 {
 	DEBUG(printf("Destroying zfs instance at %p\n", this););
