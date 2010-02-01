@@ -1,14 +1,6 @@
 #include "z.h"
 
-z::z()
-{
-#ifdef DO_DEBUG
-	init(true);
-#else
-	init(false);
-#endif
-}
-z::z(bool spew_error)
+z::z(bool spew_error = SPEW_BY_DEFAULT)
 {
 	init(spew_error);
 }
@@ -38,10 +30,6 @@ zfs_handle_t* z::raw_open_fs(const char *name, int type)
 	return fs;
 }
 
-zfs *z::open_fs(const char *name)
-{
-	return open_fs(name, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_SNAPSHOT | ZFS_TYPE_VOLUME);
-}
 zfs *z::open_fs(const char *name, int type)
 {
 	DEBUG(printf("Opening cooked fs for z instance at %p: %p, \"%s\", %d\n", this, m_handle, name, type););

@@ -24,7 +24,7 @@ class FsTest(unittest.TestCase):
 	def testOpenNull(self):
 		self.assertRaises(ValueError, self.z.open_fs, None)
 	def testOpenExisting(self):
-		self.z.open_fs(self.existing_fs)
+		a = self.z.open_fs(self.existing_fs)
 	def testOpenNonExisting(self):
 		self.assertRaises(RuntimeError, self.z.open_fs, "filesystemthatdoesntexist")
 	def testGetType(self):
@@ -43,28 +43,37 @@ class FsTest(unittest.TestCase):
 		fs.iter_filesystems(fn, [self, magic])
 	def testSendNull(self):
 		fs = self.z.open_fs(self.existing_fs)
-		self.assertRaises(ValueError, fs.send, None, 0, {})
+		self.assertRaises(ValueError, fs.send, None, 0)
 	def testSendBadArg(self):
 		fs = self.z.open_fs(self.existing_fs)
-		self.assertRaises(ValueError, fs.send, None, 0, {"verbose": "foo"})
+		self.assertRaises(ValueError, fs.send, None, 0, verbose="foo")
 	def testSendGoodArg(self):
 		fs = self.z.open_fs(self.existing_fs)
 		if RunningAsRoot:
-			fs.send(self.existing_snap, self.outfile, {})
+			fs.send(self.existing_snap, self.outfile)
 			self.assert_(self.outfile.tell() != 0)
 			self.outfile.seek(0)
 		else:
 			warnings.warn("Not running as root, this is expected to raise an exception!")
-			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile, {})
+			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile)
+	def testSendKwArg(self):
+		fs = self.z.open_fs(self.existing_fs)
+		if RunningAsRoot:
+			fs.send(self.existing_snap, self.outfile)
+			self.assert_(self.outfile.tell() != 0)
+			self.outfile.seek(0)
+		else:
+			warnings.warn("Not running as root, this is expected to raise an exception!")
+			self.assertRaises(RuntimeError, fs.send, self.existing_snap, self.outfile)
 	def testRecv(self):
 		if not RunningAsRoot:
 			warnings.warn("Not running as root, can't test recv")
 		else:
 			fs = self.z.open_fs(self.existing_fs)
-			fs.send(self.existing_snap, self.outfile, {})
+			fs.send(self.existing_snap, self.outfile)
 			self.assert_(self.outfile.tell() != 0)
 			self.outfile.seek(0)
-			fs.receive(self.existing_fs + "_clone@new", self.outfile, {})
+			fs.receive(self.existing_fs + "_clone@new", self.outfile)
 			self.assert_(self.z.open_fs(self.existing_fs + "_clone@new"))
 
 class PoolTest(unittest.TestCase):
@@ -77,8 +86,6 @@ class PoolTest(unittest.TestCase):
 		pool = self.z.open_pool(self.existing_pool)
 	def testOpenNonExisting(self):
 		self.assertRaises(RuntimeError, self.z.open_pool, 'poolthatdoesntexist')
-
-
 
 #print " Python: Trying a zfs send from %s" % (snapname)
 #fs = a.open_fs("rpool/tiny", pyzfs.ZFS_TYPE_FILESYSTEM)

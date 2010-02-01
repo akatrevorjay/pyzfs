@@ -6,6 +6,8 @@
 int Z = 0x5a; // blargh SWIG parses zfs.h wrong
 %}
 
+%feature("autodoc", "1");
+
 %rename(assign) *::operator=;
 #define _XOPEN_SOURCE_EXTENDED 1
 %ignore zfs_prop_string_to_index(zfs_prop_t, const char *, uint64_t *);
@@ -65,11 +67,13 @@ int my_eval(zfs_handle_t *child, void *data)
     		propname = prop[9:].lower()
     		if propname == "exec":
     			propname = "execute"
-    		if _pyzfs._prop_readonly(getattr(_pyzfs, prop)):
-    			exec("%s = property(lambda self: self.prop_get_int(%s))" % (propname, prop))
-    		else:
-    			exec("%s = property(lambda self: self.prop_get_int(%s), lambda self, val: self.prop_set(%s, val))" % (propname, prop, propname))
+#    		if _pyzfs._prop_readonly(getattr(_pyzfs, prop)):
+#    			exec("%s = property(lambda self: self.prop_get_int(%s))" % (propname, prop))
+#    		else:
+#    			exec("%s = property(lambda self: self.prop_get_int(%s), lambda self, val: self.prop_set(%s, val))" % (propname, prop, propname))
 %}
+
+%feature("kwargs");
 
 %include "z.h"
 %include "zfs.h"
