@@ -112,7 +112,11 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 	flags.fromorigin = fromorigin;
 	flags.dedup = dedup;
 	flags.props = props;
+        #ifdef BOOLEAN_T_CALLBACK
+	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, (boolean_t (*)(zfs_handle_t*, void*))my_eval, foo);
+        #else
 	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, my_eval, foo);
+        #endif
 	#else
 	rval = zfs_send(m_openfs, fromsnap, tosnap, (boolean_t)replicate, (boolean_t)doall, (boolean_t)fromorigin, (boolean_t)verbose, outfd);
 	#endif
