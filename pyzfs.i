@@ -21,7 +21,7 @@ int Z = 0x5a; // blargh SWIG parses zfs.h wrong
 %inline %{
 int my_eval(zfs_handle_t *child, void *data)
 {
-	DEBUG(printf("%s\n", zfs_get_name(child)););
+	DEBUG(0, printf("my_eval called for %s\n", zfs_get_name(child)););
 	PyObject *dict = (PyObject*)data;
 	PyObject *func = PyDict_GetItemString(dict, "function");
 	if (func == NULL) {
@@ -35,7 +35,7 @@ int my_eval(zfs_handle_t *child, void *data)
 	PyObject *resultobj;
 	
 	zfs the_child = zfs(m_parent, m_handle, child);
-	DEBUG(printf("Start function call:\n"););
+	DEBUG(5, printf("Start function call:\n"););
 	resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(&the_child), SWIGTYPE_p_zfs, 0 );
 	PyEval_CallObject(func, Py_BuildValue("(OO)", resultobj, realdata));
 	int rval = (resultobj == Py_True);
@@ -45,12 +45,12 @@ int my_eval(zfs_handle_t *child, void *data)
 		printf("An error occured from Python: ");
 		PyErr_Print();
 	}
-	DEBUG(printf("Done calling function\n"););
+	DEBUG(5, printf("Done calling function\n"););
 	return rval;
 }
 %}
 
-%include </usr/include/sys/fs/zfs.h>
+// %include </usr/include/sys/fs/zfs.h>
 %exception {
 	try {
 		$function

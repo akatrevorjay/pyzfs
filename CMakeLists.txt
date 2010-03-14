@@ -29,16 +29,18 @@ CHECK_TYPE_SIZE(sendflags_t SENDFLAGS_T)
 CHECK_STRUCT_HAS_MEMBER (recvflags_t istail libzfs.h HAVE_RECVFLAGS_T_ISTAIL)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 if(HAVE_SENDFLAGS_T)
+  set(CMAKE_REQUIRED_LIBRARIES zfs)
   CHECK_C_SOURCE_COMPILES("#include <libzfs.h>
 
-int func(zfs_handle_t *one, void *two) {}
+boolean_t func(zfs_handle_t *one, void *two) {}
 
 int main(int argc, char *argv[]) {
 // zfs_send(openfs, fromsnap, tosnap, flags, outfd, my_eval, foo);
-   sendflags_t flags
+   sendflags_t flags;
    zfs_send(NULL,   NULL,     NULL,   flags, 0,     func, NULL);
 }
 " BOOLEAN_T_CALLBACK)
+  set(CMAKE_REQUIRED_LIBRARIES)
 endif(HAVE_SENDFLAGS_T)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)

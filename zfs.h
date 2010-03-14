@@ -55,25 +55,45 @@ class zfs
 		#endif
 		int iter_root(PyObject *call, PyObject *data);
 		#ifdef SWIG
-		%feature("docstring") "Create a data stream that represents <this dataset>@tosnap into the file-like object writeTo, which must have a file descriptor.
-  * Set fromsnap to the name of another snapshot (which precedes tosnap) to generate an incremental snapshot: one that includes only data updated between the time fromsnap was created and the time tosnap was created.
-  * Set verbose to get a printed elapsed-time/rate message when the data stream is done being created.  This is like zfs send -v.
-  * Set replicate to generate a replication stream: one that includes all the descendents of this dataset.  This is like zfs send -R.
-  * Set doall to include intermediate snapshots in incremental streams.  That is, if you have a filesystem with snapshots one, two, and three, and you call send(\"three\", myfile, fromsnap=\"one\", doall=True) you'll end up with all three snapshots on the system where you receive the stream; without it you'll end up with only one and three.
-  * Set fromorigin if the dataset is a clone to generate an incremental snapshot from its origin
-  * Set dedup to activate deduplication on the generated stream.
-  * Set props to send properties along with the stream.  This is like zfs send -p.
-  * Set callable and callableArg if you're doing a recursive send and you want to put only certain datasets into the stream.  callable will be called like \"callable(ds, callableArg)\" must return True or False to signify whether ds should be included in the stream."
+		%feature("docstring") "Create a data stream that represents"
+"<the current dataset>@tosnap into the file-like object writeTo, which must have"
+"a file descriptor."
+"  * Set fromsnap to the name of another snapshot (which precedes tosnap) to"
+"    generate an incremental snapshot: one that includes only data updated"
+"    between the time fromsnap was created and the time tosnap was created."
+"  * Set verbose to get a printed elapsed-time/rate message when the data stream"
+"    is done being created.  This is like zfs send -v."
+"  * Set replicate to generate a replication stream: one that includes all the"
+"    descendents of this dataset.  This is like zfs send -R."
+"  * Set doall to include intermediate snapshots in incremental streams.  That"
+"    is, if you have a filesystem with snapshots one, two, and three, and you"
+"    call send(\"three\", myfile, fromsnap=\"one\", doall=True) you'll end up"
+"    with all three snapshots on the system where you receive the stream;"
+"    without it you'll end up with only one and three."
+"  * Set fromorigin if the dataset is a clone to generate an incremental"
+"    snapshot from its origin."
+"  * Set dedup to activate deduplication on the generated stream."
+"  * Set props to send properties along with the stream.  This is like"
+"    'zfs send -p'."
+"  * Set callable and callableArg if you're doing a recursive send and you want"
+"    to put only certain datasets into the stream.  callable will be called"
+"    like \"callable(ds, callableArg)\" must return True or False to signify"
+"    whether ds should be included in the stream."
 // FIXME: Does a recursive snapshot with callable set pass only snapshots to it?  Other datasets?
 		#endif
 		int send(char *tosnap, PyObject *writeTo, char *fromsnap = NULL, bool verbose = false, bool replicate = false, bool doall = false, bool fromorigin = false, bool dedup = false, bool props = false, PyObject *callable = NULL, PyObject *callableArg = NULL);
 		#ifdef SWIG
-		%feature("docstring") "Receive a data stream from the file-like object readFrom into the snapshot tosnap.
-  * Set verbose to print an elapsed-time/rate message when the data stream has been completely received.  This is like zfs recv -v.
-  * Set isprefix if the destination is a prefix, not the exact filesystem.  This is like zfs recv -d.
-  * Set dryrun if nothing should actually be written to the filesystem, just check if it could be done.  This is like zfs recv -n.
-  * Set force if filesystems should be rolled back (or destroyed!) as necessary.  This is like zfs recv -F.
-  * Set canmountoff if the received filesystems should have \"canmount=off\" set on them."
+		%feature("docstring") "Receive a data stream from the file-like object readFrom into the snapshot tosnap.\n"
+"  * Set verbose to print an elapsed-time/rate message when the data stream has"
+"    been completely received.  This is like zfs recv -v."
+"  * Set isprefix if the destination is a prefix, not the exact filesystem.  This"
+"    is like zfs recv -d."
+"  * Set dryrun if nothing should actually be written to the filesystem, just"
+"    check if it could be done.  This is like zfs recv -n."
+"  * Set force if filesystems should be rolled back (or destroyed!) as necessary."
+"    This is like zfs recv -F."
+"  * Set canmountoff if the received filesystems should have \"canmount=off\" set"
+"    on them."
 		#endif
 		int receive(const char *tosnap, PyObject *readFrom, bool verbose = false, bool isprefix = false, bool istail = false, bool dryrun = false, bool force = false, bool canmountoff = false);
 		#ifdef SWIG

@@ -22,9 +22,9 @@ typedef zfs_source_t my_zprop_t ;
 typedef zprop_source_t my_zprop_t ;
 #endif
 #ifdef DO_DEBUG
-#define DEBUG(x) x
+#define DEBUG(priority, x) if (priority >= DO_DEBUG) { x; }
 #else
-#define DEBUG(x) /* x */
+#define DEBUG(priority, x) /* x */
 #endif
 
 class zfs;

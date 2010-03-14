@@ -3,16 +3,16 @@ bool _prop_readonly(zfs_prop_t prop) { return zfs_prop_readonly(prop); }
 
 void zfs::init(z *p, const libzfs_handle_t *h, zfs_handle_t *fs)
 {
-	DEBUG(printf("Creating zfs instance at %p with %p and %p\n", this, h, fs););
+	DEBUG(0, printf("Creating zfs instance at %p with %p and %p\n", this, h, fs););
 	m_parent = p;
 	m_handle = (libzfs_handle_t*)h;
 	m_openfs = fs;
-	DEBUG(printf("Instantiated at %p: is %s and name is %s\n", this,  this->type_string(), this->name()););
+	DEBUG(10, printf("Instantiated at %p: is %s and name is %s\n", this,  this->type_string(), this->name()););
 }
 
 zfs& zfs::operator=(const zfs &other)
 {
-	DEBUG(printf("zfs operator= from %p to %p\n", &other, this););
+	DEBUG(10, printf("zfs operator= from %p to %p\n", &other, this););
 	printstack(fileno(stdout));
 	init(other.m_parent,
 			other.m_handle,
@@ -21,20 +21,20 @@ zfs& zfs::operator=(const zfs &other)
 }
 zfs::zfs(z *p, libzfs_handle_t *h, zfs_handle_t *fs)
 {
-	DEBUG(printf("zfs plain create at %p\n", this);)
+	DEBUG(10, printf("zfs plain create at %p\n", this);)
 	init(p, h, fs);
 }
 const char *zfs::name(void) const
 {
 	const char *temp;
-	DEBUG(printf("Getting name from %p: ", this);)
+	DEBUG(0, printf("Getting name from %p: ", this);)
 	temp = zfs_get_name(m_openfs);
-	DEBUG(printf("Got \"%s\"\n", temp);)
+	DEBUG(10, printf("Got \"%s\"\n", temp);)
 	return temp;
 }
 zfs_type_t zfs::type(void) const
 {
-	DEBUG(printf("Getting type from %p\n", this);)
+	DEBUG(10, printf("Getting type from %p\n", this);)
 	return zfs_get_type(m_openfs);
 }
 const char *zfs::type_string(void) const
@@ -60,7 +60,7 @@ EXTERN int my_eval(zfs_handle_t *child, void *data);
 int zfs::generic_iter(PyObject *call, PyObject *data, iter_type type, bool recurse)
 // Note: recurse is only used for the "dependents" mode
 {
-	DEBUG(printf("generic_iter at %p, Function is at %p, data is %p\n", this, call, data););
+	DEBUG(10, printf("generic_iter at %p, Function is at %p, data is %p\n", this, call, data););
 	PyObject *foo = Py_BuildValue("{sOsOsO}",
 					"function", call,
 					"parent", PyCObject_FromVoidPtr(m_parent, NULL),
@@ -92,15 +92,20 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 					"parent", PyCObject_FromVoidPtr(m_parent, NULL),
 					"zfs_handle", PyCObject_FromVoidPtr(m_handle, NULL));
 	if (PyErr_Occurred()) {
-		DEBUG(printf("Couldn't build dictionary object\n"));
+		DEBUG(20, printf("Couldn't build dictionary object\n"));
 		return -1;
 	}
-	if (callable != NULL) 
+	int (*callback)(zfs_handle_t*, void*) = my_eval;
+	if (callable != NULL)
+	{
 		PyDict_SetItemString(foo, "function", callable);
+	} else {
+		callback = NULL;
+	}
 	if (callableArg != NULL)
 		PyDict_SetItemString(foo, "data", callableArg);
 	int outfd = PyObject_AsFileDescriptor(writeTo);
-	DEBUG(printf("Got FD %d from file object %p\n", outfd, writeTo));
+	DEBUG(10, printf("Got FD %d from file object %p\n", outfd, writeTo));
 	if (outfd == -1) {
 		throw Exception(PyExc_TypeError, "Couldn't get file descriptor from writeTo");
 	}
@@ -112,16 +117,16 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 	flags.fromorigin = fromorigin;
 	flags.dedup = dedup;
 	flags.props = props;
-        #ifdef BOOLEAN_T_CALLBACK
-	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, (boolean_t (*)(zfs_handle_t*, void*))my_eval, foo);
-        #else
-	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, my_eval, foo);
-        #endif
+	#ifdef BOOLEAN_T_CALLBACK
+	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, (boolean_t (*)(zfs_handle_t*, void*))callback, foo);
+	#else
+	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, callback, foo);
+	#endif
 	#else
 	rval = zfs_send(m_openfs, fromsnap, tosnap, (boolean_t)replicate, (boolean_t)doall, (boolean_t)fromorigin, (boolean_t)verbose, outfd);
 	#endif
 	
-	DEBUG(printf("zfs_send returned %d\n", rval));
+	DEBUG(30, printf("zfs_send returned %d after writing %ld bytes\n", rval, lseek(outfd, 0, SEEK_CUR)));
 	if (rval != 0) {
 		throw Exception(PyExc_RuntimeError, std::string(libzfs_error_action(m_handle)) + ": " + libzfs_error_description(m_handle));
 	}
@@ -144,7 +149,7 @@ int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool ispr
 	flags.canmountoff = canmountoff;
 	
 	int fromFD = PyObject_AsFileDescriptor(readFrom);
-	DEBUG(printf("Got FD %d from file object %p\n", fromFD, readFrom));
+	DEBUG(5, printf("Got FD %d from file object %p, currently positioned at %ld bytes\n", fromFD, readFrom, lseek(fromFD, 0, SEEK_CUR)));
 	if (fromFD == -1) {
 		throw Exception(PyExc_TypeError, "Couldn't get file descriptor from readFrom");
 	}
@@ -182,15 +187,15 @@ int zfs::snapshot(const char *snapname, bool recursive, PyObject *props)
 
 zfs::~zfs()
 {
-	DEBUG(printf("Destroying zfs instance at %p\n", this););
+	DEBUG(0, printf("Destroying zfs instance at %p\n", this););
 	if (m_openfs != NULL)
 	{
-		DEBUG(printf("Closing handle at %p\n", m_openfs););
+		DEBUG(0, printf("Closing handle at %p\n", m_openfs););
 		zfs_close(m_openfs);
-		DEBUG(printf("Closed handle, %p\n", m_openfs););
+		DEBUG(0, printf("Closed handle, %p\n", m_openfs););
 	}
 	else
 		return;
 	m_openfs = NULL;
-	DEBUG(printf("Done destroying %p\n", this););
+	DEBUG(10, printf("Done destroying %p\n", this););
 }

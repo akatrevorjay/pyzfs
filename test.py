@@ -23,12 +23,12 @@ class FsTest(unittest.TestCase):
 	existing_snap = None
 	def setUp(self):
 		self.z = pyzfs.z(False) # argument is "should I spew debug"
-		self.outfile = tempfile.NamedTemporaryFile()
+		self.outfile = open("/tmp/teststream", "w+b") #tempfile.NamedTemporaryFile()
 	def testOpenNull(self):
 		self.assertRaises(ValueError, self.z.open_fs, None)
 	def testOpenExisting(self):
 		a = self.z.open_fs(self.existing_fs)
-		print a.name()
+		self.assert_(a.name() == self.existing_fs)
 	def testOpenNonExisting(self):
 		self.assertRaises(RuntimeError, self.z.open_fs, "filesystemthatdoesntexist")
 	def testGetType(self):
@@ -76,8 +76,10 @@ class FsTest(unittest.TestCase):
 		fs = self.z.open_fs(self.existing_fs)
 		fs.send(self.existing_snap, self.outfile)
 		self.assert_(self.outfile.tell() != 0)
+		self.outfile.flush()
+		os.fsync(self.outfile.fileno())
 		self.outfile.seek(0)
-		fs.receive(self.existing_fs + "_clone@new", self.outfile)
+		fs.receive(self.existing_fs + "_clone@new", self.outfile, verbose=True)
 		newsnap = self.z.open_fs(self.existing_fs + "_clone@new")
 		newsnap.destroy()
 		newfs = self.z.open_fs(self.existing_fs + "_clone")
@@ -105,4 +107,4 @@ if __name__ == "__main__":
 	PoolTest.existing_pool = "huge"
 	for testCase in [FsTest]: #, PoolTest]:
 		suite = unittest.TestLoader().loadTestsFromTestCase(testCase)
-		unittest.TextTestRunner(verbosity=2).run(suite)
+		unittest.TextTestRunner(verbosity=3).run(suite)
