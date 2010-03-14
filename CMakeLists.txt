@@ -1,7 +1,5 @@
 # This is a CMake example for Python
 cmake_minimum_required(VERSION 2.6)
-# SET(CMAKE_CXX_COMPILER "/opt/SunStudioExpress/bin/CC")
-SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 project(pyzfs)
 FIND_PACKAGE(SWIG REQUIRED)
@@ -25,9 +23,11 @@ SWIG_LINK_LIBRARIES(pyzfs ${PYTHON_LIBRARIES})
 SWIG_LINK_LIBRARIES(pyzfs zfs)
 SWIG_LINK_LIBRARIES(pyzfs stdc++)
 set(SWIG_MODULE_pyzfs_EXTRA_DEPS common.i)
+set(CMAKE_EXTRA_INCLUDE_FILES libzfs.h)
 CHECK_TYPE_SIZE(zfs_source_t ZFS_SOURCE_T)
 CHECK_TYPE_SIZE(sendflags_t SENDFLAGS_T)
 CHECK_STRUCT_HAS_MEMBER (recvflags_t istail libzfs.h HAVE_RECVFLAGS_T_ISTAIL)
+set(CMAKE_EXTRA_INCLUDE_FILES)
 if(HAVE_SENDFLAGS_T)
   CHECK_C_SOURCE_COMPILES("#include <libzfs.h>
 

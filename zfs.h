@@ -84,7 +84,7 @@ class zfs
 		%feature("docstring") "Take a snapshot of this dataset; call it \"snapname\" and set properties as specified in \"props\".  If recursive is set, make a snapshot of all descendents as well."
 		#endif
 		int snapshot(const char *snapname, bool recursive = false, PyObject *props = NULL);
-		zfs& zfs::operator=(const zfs &);
+		zfs& operator=(const zfs &);
 		zfs(z*, libzfs_handle_t *, zfs_handle_t *);
 	private:
 		void init(z*, const libzfs_handle_t *, zfs_handle_t *);
@@ -93,7 +93,7 @@ class zfs
 		zfs_handle_t *m_openfs;
 		z *m_parent;
 		enum iter_type { filesystems, children, dependents, snapshots, root };
-		int zfs::generic_iter(PyObject*, PyObject*, iter_type, bool);
+		int generic_iter(PyObject*, PyObject*, iter_type, bool);
 		friend class z;
 };
 
