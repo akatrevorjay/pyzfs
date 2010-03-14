@@ -1,4 +1,4 @@
-On Opensolaris, one must edit /usr/site/include/python2.5/pyconfig.h:
+On my homebuilt Python on an older version of Opensolaris, one must edit /usr/site/include/python2.5/pyconfig.h:
 --- pyconfig.h.orig	Tue Jul  8 20:50:29 2008
 +++ pyconfig.h	Tue Jul  8 20:48:49 2008
 @@ -938,10 +938,10 @@
@@ -16,3 +16,20 @@ On Opensolaris, one must edit /usr/site/include/python2.5/pyconfig.h:
  #define __BSD_VISIBLE 1
 
 
+Steps to install pyzfs on vanilla b134
+pfexec pkg install versioning/subversion cmake gnu-make gcc-43 swig
+svn co https://pyzfs.svn.sourceforge.net/svnroot/pyzfs
+export PATH=$PATH:/usr/gcc/4.3/bin
+cd pyzfs/trunk
+
+(fix an apparent bug I found: there's no libdladm.so.1 in /usr/lib, only in /lib)
+pfexec ln -s /lib/libdladm.so.1 /usr/lib/
+pfexec ln -s /lib/libdladm.so /usr/lib/
+
+cmake .
+gmake
+
+(to test things)
+pfexec zfs create rpool/tiny
+pfexec zfs snapshot rpool/tiny@now
+pfexec python test.py
