@@ -43,31 +43,37 @@ INCLUDE_DIRECTORIES(/usr/include/libspl)
 
 ## Check for vars in zfs_config.h; this one is especially important on ZoL
 CHECK_INCLUDE_FILES(${CMAKE_CURRENT_SOURCE_DIR}/zfs_config.h HAVE_IOCTL_IN_SYS_IOCTL_H)
+CHECK_INCLUDE_FILES(${CMAKE_CURRENT_SOURCE_DIR}/config.h HACK_TREVORJ_ZOL)
+CHECK_INCLUDE_FILES(${CMAKE_CURRENT_SOURCE_DIR}/config.h BOOLEAN_T_CALLBACK)
 
 
+if(HAVE_IOCTL_IN_SYS_IOCTL_H)
+    set(CMAKE_REQUIRED_DEFINITIONS -DHAVE_IOCTL_IN_SYS_IOCTL_H=1 -DHACK_TREVORJ_ZOL=1)
+endif(HAVE_IOCTL_IN_SYS_IOCTL_H)
 
 SET(CMAKE_SWIG_FLAGS "-c++;-classic")
 SET(CMAKE_SHARED_LINKER_FLAGS "-fPIC")
 
 SET_SOURCE_FILES_PROPERTIES(pyzfs.i PROPERTIES CPLUSPLUS ON)
 SET_SOURCE_FILES_PROPERTIES(pyzfs.i PROPERTIES SWIG_FLAGS "")
-SWIG_ADD_MODULE(pyzfs python pyzfs.i z.cxx zfs.cxx zpool.cxx ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+SWIG_ADD_MODULE(pyzfs python pyzfs.i z.cxx zfs.cxx zpool.cxx)
+#${CMAKE_CURRENT_BINARY_DIR}/config.h)
 SWIG_LINK_LIBRARIES(pyzfs ${PYTHON_LIBRARIES})
 SWIG_LINK_LIBRARIES(pyzfs zfs)
 SWIG_LINK_LIBRARIES(pyzfs stdc++)
 set(SWIG_MODULE_pyzfs_EXTRA_DEPS common.i)
 
-set(CMAKE_EXTRA_INCLUDE_FILES libzfs.h)
-CHECK_TYPE_SIZE(zfs_source_t ZFS_SOURCE_T)
-CHECK_TYPE_SIZE(sendflags_t SENDFLAGS_T)
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_BINARY_DIR} /usr/include/x86_64 /usr/include /usr/include/libspl /usr/include/libzfs)
+set(CMAKE_EXTRA_INCLUDE_FILES config.h libzfs.h)
+CHECK_TYPE_SIZE(zfs_source_t HAVE_ZFS_SOURCE_T)
+CHECK_TYPE_SIZE(sendflags_t HAVE_SENDFLAGS_T)
 CHECK_STRUCT_HAS_MEMBER (recvflags_t istail libzfs.h HAVE_RECVFLAGS_T_ISTAIL)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
 if(HAVE_SENDFLAGS_T)
   set(CMAKE_REQUIRED_LIBRARIES zfs)
-#   CHECK_C_SOURCE_COMPILES("#include \"config.h\"
-# #include <libzfs.h>
-  CHECK_C_SOURCE_COMPILES("#include <libzfs.h>
+  CHECK_C_SOURCE_COMPILES("#include <config.h>
+#include <libzfs.h>
 
 boolean_t func(zfs_handle_t *one, void *two) {}
 

@@ -141,7 +141,10 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 	flags.fromorigin = fromorigin;
 	flags.dedup = dedup;
 	flags.props = props;
-	#ifdef BOOLEAN_T_CALLBACK
+    #ifdef HACK_TREVORJ_ZOL
+    nvlist_t **nv_props = NULL;
+	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, (boolean_t (*)(zfs_handle_t*, void*))callback, foo, nv_props);
+    #elif BOOLEAN_T_CALLBACK
 	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, (boolean_t (*)(zfs_handle_t*, void*))callback, foo);
 	#else
 	rval = zfs_send(m_openfs, fromsnap, tosnap, flags, outfd, callback, foo);
