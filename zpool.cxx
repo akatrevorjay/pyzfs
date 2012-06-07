@@ -21,7 +21,10 @@ const char *zpool::name() const
 {
 	return zpool_get_name(m_openpool);
 }
-//void zpool::scrub(const pool_scrub_type_t type) const
-//{
-//	zpool_scrub(m_openpool, type);
-//}
+/*
+void zpool::scrub(const pool_scrub_type_t type) const
+{
+	zpool_scrub(m_openpool, type);
+}
+*/
+
