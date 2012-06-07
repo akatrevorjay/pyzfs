@@ -1,3 +1,4 @@
+#include "config.h"
 #include "z.h"
 
 z::z(bool spew_error = SPEW_BY_DEFAULT)

@@ -1,4 +1,8 @@
 %module pyzfs
+%begin %{
+#include "config.h"
+/*#include "zfs_config.h"*/
+%}
 %{
 #include "z.h"
 #include "zfs.h"

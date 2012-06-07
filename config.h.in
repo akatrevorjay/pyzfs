@@ -3,7 +3,8 @@
 #cmakedefine HAVE_SENDFLAGS_T
 #cmakedefine BOOLEAN_T_CALLBACK
 
-#define HAVE_IOCTL_IN_SYS_IOCTL_H 1
+
+#cmakedefine HAVE_IOCTL_IN_SYS_IOCTL_H 1
 
 
 #define NEED_EXTERN_C

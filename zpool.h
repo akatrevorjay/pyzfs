@@ -1,6 +1,7 @@
 #ifndef ZPOOL_H
 #define ZPOOL_H
 
+#include "config.h"
 #include "core.h"
 #include "z.h"
 
@@ -10,7 +11,7 @@ class zpool
 		zpool(const zpool&);
 		~zpool();
 		const char *name() const;
-		void scrub(const pool_scrub_type_t) const;
+		//void scrub(const pool_scrub_type_t) const;
 	private:
 		zpool(libzfs_handle_t *, zpool_handle_t *);
 		libzfs_handle_t *m_handle;

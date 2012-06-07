@@ -1,8 +1,6 @@
 #ifndef _CORE_H
 #define _CORE_H
 
-#include "config.h"
-
 #include <Python.h>
 #include <libzfs.h>
 #include <sys/fs/zfs.h>

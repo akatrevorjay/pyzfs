@@ -1,4 +1,27 @@
+#include "config.h"
 #include "zfs.h"
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Obtain a backtrace and print it to stdout. */
+void print_trace (void) {
+    void *array[10];
+    size_t size;
+    char **strings;
+    size_t i;
+
+    size = backtrace (array, 10);
+    strings = backtrace_symbols (array, size);
+
+    printf ("Obtained %zd stack frames.\n", size);
+
+    for (i = 0; i < size; i++)
+      printf ("%s\n", strings[i]);
+
+    free (strings);
+}
+
 bool _prop_readonly(zfs_prop_t prop) { return zfs_prop_readonly(prop); }
 
 void zfs::init(z *p, const libzfs_handle_t *h, zfs_handle_t *fs)
@@ -13,7 +36,7 @@ void zfs::init(z *p, const libzfs_handle_t *h, zfs_handle_t *fs)
 zfs& zfs::operator=(const zfs &other)
 {
 	DEBUG(10, printf("zfs operator= from %p to %p\n", &other, this););
-	printstack(fileno(stdout));
+    print_trace();
 	init(other.m_parent,
 			other.m_handle,
 			other.m_parent->raw_open_fs(other.name(), other.type()));
@@ -83,6 +106,7 @@ int zfs::iter_dependents(PyObject *call, PyObject *data, bool recurse) { return 
 int zfs::iter_children(PyObject *call, PyObject *data) { return generic_iter(call, data, children, false); }
 int zfs::iter_root(PyObject *call, PyObject *data) { return generic_iter(call, data, root, false); }
 
+
 int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, bool replicate, bool doall, bool fromorigin, bool dedup, bool props, PyObject *callable, PyObject *callableArg)
 {
 	if (tosnap == NULL)
@@ -132,6 +156,7 @@ int zfs::send(char *tosnap, PyObject *writeTo, char *fromsnap, bool verbose, boo
 	}
 	return rval;
 }
+
 
 int zfs::receive(const char *tosnap, PyObject *readFrom, bool verbose, bool isprefix, bool istail, bool dryrun, bool force, bool canmountoff)
 {
