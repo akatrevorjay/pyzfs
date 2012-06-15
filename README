@@ -1,0 +1,7 @@
+
+This is pyzfs from pyzfs.sf.net patched (poorly) for ZFS on Linux support.
+
+This is my first foray into SWIG and Python C/C++ bindings, so be nice ;)
+
+Plan is to extend this since the interface given is rather horrid. Help is welcome!
+
