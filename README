@@ -1,4 +1,6 @@
 
+DEPRECATED: See akatrevorjay/pyzfscore for where the current work lies, a rewrite in CFFI.
+
 This is pyzfs from pyzfs.sf.net patched (poorly) for ZFS on Linux support.
 
 This is my first foray into SWIG and Python C/C++ bindings, so be nice ;)
